@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LibraryOS — Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:     #0f1117;
+    --paper:   #f7f5f0;
+    --mist:    #e8e4dc;
+    --shelf:   #2c3e50;
+    --accent:  #c0392b;
+    --gold:    #d4a017;
+    --text:    #2d2d2d;
+    --sub:     #6b6b6b;
+    --white:   #ffffff;
+    --success: #27ae60;
+    --radius:  6px;
+    --shadow:  0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--paper); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* SIDEBAR */
+  .sidebar { width: 240px; min-height: 100vh; background: var(--shelf); display: flex; flex-direction: column; position: fixed; left:0; top:0; bottom:0; z-index:100; }
+  .sidebar-logo { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo .logo-icon { font-size: 22px; margin-bottom: 6px; }
+  .sidebar-logo h1 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--white); }
+  .sidebar-logo span { font-size: 11px; color: rgba(255,255,255,0.4); font-family: 'JetBrains Mono',monospace; text-transform: uppercase; letter-spacing: 1.5px; }
+  .sidebar-user { padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px; }
+  .user-avatar { width:34px; height:34px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:white; flex-shrink:0; }
+  .user-info .name { font-size:13px; font-weight:500; color:white; }
+  .user-info .role { font-size:11px; color:rgba(255,255,255,0.45); font-family:'JetBrains Mono',monospace; }
+  .sidebar-nav { flex:1; padding:12px 0; overflow-y:auto; }
+  .nav-label { font-size:10px; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:1.8px; color:rgba(255,255,255,0.28); padding:16px 24px 6px; }
+  .nav-item { display:flex; align-items:center; gap:11px; padding:10px 24px; color:rgba(255,255,255,0.65); cursor:pointer; font-size:14px; transition:all .18s; border-left:3px solid transparent; user-select:none; }
+  .nav-item:hover { color:white; background:rgba(255,255,255,0.06); }
+  .nav-item.active { color:white; background:rgba(255,255,255,0.1); border-left-color:var(--accent); font-weight:500; }
+  .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+  .sidebar-footer { padding:16px 24px; border-top:1px solid rgba(255,255,255,0.08); }
+  .logout-btn { width:100%; padding:9px; background:rgba(192,57,43,0.2); border:1px solid rgba(192,57,43,0.35); color:#e87070; border-radius:var(--radius); cursor:pointer; font-size:13px; font-family:'Inter',sans-serif; transition:all .18s; }
+  .logout-btn:hover { background:rgba(192,57,43,0.35); }
+
+  /* MAIN */
+  .main { margin-left:240px; flex:1; display:flex; flex-direction:column; min-height:100vh; }
+  .topbar { height:60px; background:var(--white); border-bottom:1px solid var(--mist); display:flex; align-items:center; padding:0 32px; gap:16px; position:sticky; top:0; z-index:50; }
+  .topbar-title { font-family:'DM Serif Display',serif; font-size:20px; color:var(--ink); flex:1; }
+  .topbar-date { font-size:12px; color:var(--sub); font-family:'JetBrains Mono',monospace; }
+  .content { padding:32px; flex:1; }
+
+  /* LOGIN */
+  #login-screen { position:fixed; inset:0; background:var(--shelf); display:flex; align-items:center; justify-content:center; z-index:999; }
+  .login-card { background:var(--white); border-radius:12px; padding:48px 40px; width:380px; box-shadow:var(--shadow-lg); }
+  .login-brand { text-align:center; margin-bottom:32px; }
+  .login-brand .book-icon { font-size:40px; }
+  .login-brand h2 { font-family:'DM Serif Display',serif; font-size:26px; color:var(--ink); margin-top:6px; }
+  .login-brand p { font-size:13px; color:var(--sub); margin-top:3px; }
+  .form-group { margin-bottom:18px; }
+  .form-group label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.8px; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px 13px; border:1.5px solid var(--mist); border-radius:var(--radius); font-size:14px; font-family:'Inter',sans-serif; color:var(--text); background:var(--white); transition:border-color .15s; outline:none; }
+  .form-group input:focus, .form-group select:focus { border-color:var(--shelf); }
+  .btn-primary { width:100%; padding:11px; background:var(--shelf); color:white; border:none; border-radius:var(--radius); font-size:14px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; transition:background .18s; }
+  .btn-primary:hover { background:#1a252f; }
+
+  /* STATS */
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:18px; margin-bottom:32px; }
+  .stat-card { background:var(--white); border-radius:10px; padding:22px 24px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .stat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background:var(--accent); opacity:0; transition:opacity .2s; }
+  .stat-card:hover::after { opacity:1; }
+  .stat-label { font-size:11px; font-weight:500; color:var(--sub); text-transform:uppercase; letter-spacing:1px; }
+  .stat-value { font-family:'DM Serif Display',serif; font-size:38px; color:var(--ink); line-height:1.1; margin:6px 0 4px; }
+  .stat-icon { font-size:22px; position:absolute; right:20px; top:20px; opacity:0.18; }
+  .stat-sub { font-size:12px; color:var(--sub); }
+
+  /* SECTION */
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .section-header h2 { font-family:'DM Serif Display',serif; font-size:22px; color:var(--ink); }
+  .section-header p { font-size:13px; color:var(--sub); margin-top:2px; }
+
+  /* BUTTONS */
+  .btn { padding:9px 18px; border-radius:var(--radius); font-size:13px; font-weight:500; font-family:'Inter',sans-serif; cursor:pointer; border:none; transition:all .18s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-add { background:var(--shelf); color:white; }
+  .btn-add:hover { background:#1a252f; }
+  .btn-danger { background:#fdf0f0; color:var(--accent); border:1px solid #f5c6c6; }
+  .btn-danger:hover { background:#fce0e0; }
+  .btn-edit { background:#f0f4ff; color:#2563eb; border:1px solid #c7d7fc; }
+  .btn-edit:hover { background:#dce8ff; }
+  .btn-sm { padding:6px 12px; font-size:12px; }
+  .btn-success { background:#edfaf3; color:var(--success); border:1px solid #a3e4bc; }
+  .btn-success:hover { background:#d5f5e3; }
+  .btn-outline { padding:9px 18px; border:1.5px solid var(--mist); background:transparent; border-radius:var(--radius); font-size:13px; cursor:pointer; font-family:'Inter',sans-serif; color:var(--sub); transition:all .15s; }
+  .btn-outline:hover { border-color:#aaa; color:var(--text); }
+
+  /* TABLE */
+  .table-wrap { background:var(--white); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .table-toolbar { padding:14px 20px; border-bottom:1px solid var(--mist); display:flex; align-items:center; gap:12px; }
+  .search-input { flex:1; padding:8px 12px; border:1.5px solid var(--mist); border-radius:var(--radius); font-size:13px; font-family:'Inter',sans-serif; outline:none; transition:border-color .15s; }
+  .search-input:focus { border-color:var(--shelf); }
+  table { width:100%; border-collapse:collapse; }
+  thead tr { background:#fafaf8; }
+  th { text-align:left; padding:12px 16px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--sub); border-bottom:1px solid var(--mist); white-space:nowrap; }
+  td { padding:13px 16px; font-size:13px; border-bottom:1px solid #f2f0eb; color:var(--text); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#faf9f7; }
+  .badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:500; font-family:'JetBrains Mono',monospace; }
+  .badge-green { background:#edfaf3; color:#1e8449; }
+  .badge-red { background:#fdf0f0; color:#c0392b; }
+  .badge-yellow { background:#fef9e7; color:#b7770d; }
+  .badge-blue { background:#eaf2ff; color:#1a5eb8; }
+  .badge-gray { background:#f0f0f0; color:#555; }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(15,17,23,0.55); display:flex; align-items:center; justify-content:center; z-index:500; opacity:0; pointer-events:none; transition:opacity .2s; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:var(--white); border-radius:12px; width:480px; max-width:94vw; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg); transform:translateY(16px); transition:transform .2s; }
+  .modal-overlay.open .modal { transform:translateY(0); }
+  .modal-header { padding:24px 28px 18px; border-bottom:1px solid var(--mist); display:flex; align-items:center; justify-content:space-between; }
+  .modal-header h3 { font-family:'DM Serif Display',serif; font-size:20px; }
+  .modal-close { width:30px; height:30px; border:none; background:var(--mist); border-radius:50%; cursor:pointer; font-size:16px; color:var(--sub); display:flex; align-items:center; justify-content:center; transition:background .15s; }
+  .modal-close:hover { background:#d8d4cc; }
+  .modal-body { padding:24px 28px; }
+  .modal-footer { padding:16px 28px 24px; display:flex; gap:10px; justify-content:flex-end; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  /* PAGES */
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* TOAST */
+  .toast-wrap { position:fixed; bottom:28px; right:28px; z-index:999; display:flex; flex-direction:column; gap:10px; }
+  .toast { background:var(--shelf); color:white; padding:13px 20px; border-radius:8px; font-size:13px; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:10px; animation:slideIn .25s ease; max-width:320px; }
+  .toast.success { background:#1e6b40; }
+  .toast.error { background:#8b1e1e; }
+  @keyframes slideIn { from { transform:translateX(30px); opacity:0; } to { transform:none; opacity:1; } }
+
+  /* CARDS */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .card { background:var(--white); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .card-header { padding:18px 22px 14px; border-bottom:1px solid var(--mist); font-family:'DM Serif Display',serif; font-size:17px; }
+  .activity-item { padding:13px 22px; border-bottom:1px solid #f2f0eb; display:flex; align-items:center; gap:12px; font-size:13px; }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+  .activity-dot.green { background:var(--success); }
+  .activity-dot.gold { background:var(--gold); }
+  .activity-text { flex:1; }
+  .activity-time { font-size:11px; color:var(--sub); font-family:'JetBrains Mono',monospace; white-space:nowrap; }
+  .empty-state { text-align:center; padding:48px 20px; color:var(--sub); }
+  .empty-state .empty-icon { font-size:40px; margin-bottom:10px; }
+  .empty-state p { font-size:13px; }
+
+  /* LOADING */
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin .6s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-row td { color:var(--sub); font-style:italic; text-align:center; padding:32px; }
+
+  /* API STATUS */
+  .api-status { display:flex; align-items:center; gap:6px; font-size:12px; font-family:'JetBrains Mono',monospace; }
+  .api-dot { width:7px; height:7px; border-radius:50%; background:#ccc; }
+  .api-dot.connected { background:var(--success); }
+  .api-dot.error { background:var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="book-icon">📚</div>
+      <h2>LibraryOS</h2>
+      <p>Sign in to manage your library</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="Enter username" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Enter password">
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div id="login-error" style="color:#c0392b;font-size:13px;text-align:center;margin-top:12px;display:none"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">📚</div>
+    <h1>LibraryOS</h1>
+    <span>Management System</span>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="user-avatar">SA</div>
+    <div class="user-info">
+      <div class="name" id="user-name">—</div>
+      <div class="role" id="user-role">—</div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">🏠</span> Dashboard</div>
+    <div class="nav-label">Books</div>
+    <div class="nav-item" onclick="showPage('books')"><span class="icon">📖</span> Book Catalog</div>
+    <div class="nav-label">People</div>
+    <div class="nav-item" onclick="showPage('members')"><span class="icon">👤</span> Members</div>
+    <div class="nav-label">Circulation</div>
+    <div class="nav-item" onclick="showPage('issue')"><span class="icon">📤</span> Issue / Return</div>
+    <div class="nav-label">Analytics</div>
+    <div class="nav-item" onclick="showPage('reports')"><span class="icon">📊</span> Reports</div>
+    <div class="nav-label" id="admin-nav-label" style="display:none">Admin</div>
+    <div class="nav-item" id="nav-admins" onclick="showPage('admins')" style="display:none"><span class="icon">🔐</span> Admin Users</div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="api-status" id="api-status" style="margin-bottom:10px">
+      <div class="api-dot" id="api-dot"></div>
+      <span id="api-status-text">Connecting…</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">⏻ &nbsp;Sign Out</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard</div>
+    <div class="topbar-date" id="topbar-date"></div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-label">Total Books</div><div class="stat-value" id="s-total">—</div><div class="stat-sub">in catalog</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-label">Available</div><div class="stat-value" id="s-avail">—</div><div class="stat-sub">ready to issue</div></div>
+        <div class="stat-card"><div class="stat-icon">📤</div><div class="stat-label">Issued</div><div class="stat-value" id="s-issued">—</div><div class="stat-sub">currently out</div></div>
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Members</div><div class="stat-value" id="s-members">—</div><div class="stat-sub">registered</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-label">Overdue</div><div class="stat-value" id="s-overdue">—</div><div class="stat-sub">past due date</div></div>
+        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Fines (₹)</div><div class="stat-value" id="s-fines">—</div><div class="stat-sub">total collected</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card"><div class="card-header">Recent Activity</div><div id="activity-list"><div class="empty-state"><p>Loading…</p></div></div></div>
+        <div class="card"><div class="card-header">Overdue Books</div><div id="overdue-list"><div class="empty-state"><p>Loading…</p></div></div></div>
+      </div>
+    </div>
+
+    <!-- BOOKS -->
+    <div class="page" id="page-books">
+      <div class="section-header">
+        <div><h2>Book Catalog</h2><p>Manage your library's collection</p></div>
+        <button class="btn btn-add" onclick="openModal('book-modal')">＋ Add Book</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <input class="search-input" placeholder="🔍  Search by title, author or category…" oninput="filterRows('books-tbody', this.value)">
+        </div>
+        <table><thead><tr><th>ID</th><th>Title</th><th>Author</th><th>Category</th><th>ISBN</th><th>Publisher</th><th>Qty</th><th>Available</th><th>Actions</th></tr></thead>
+        <tbody id="books-tbody"><tr class="loading-row"><td colspan="9">Loading books…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div class="page" id="page-members">
+      <div class="section-header">
+        <div><h2>Members</h2><p>Library membership directory</p></div>
+        <button class="btn btn-add" onclick="openModal('member-modal')">＋ Add Member</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <input class="search-input" placeholder="🔍  Search by name, email or course…" oninput="filterRows('members-tbody', this.value)">
+        </div>
+        <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Course</th><th>Join Date</th><th>Actions</th></tr></thead>
+        <tbody id="members-tbody"><tr class="loading-row"><td colspan="7">Loading members…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ISSUE/RETURN -->
+    <div class="page" id="page-issue">
+      <div class="section-header">
+        <div><h2>Issue / Return</h2><p>Manage book circulation</p></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-add" onclick="openIssueModal()">📤 Issue Book</button>
+          <button class="btn btn-success" onclick="openReturnModal()">📥 Return Book</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <input class="search-input" placeholder="🔍  Search by name or title…" oninput="filterRows('issue-tbody', this.value)">
+          <select onchange="filterByStatus(this.value)" style="padding:8px 12px;border:1.5px solid var(--mist);border-radius:6px;font-size:13px;font-family:Inter,sans-serif;outline:none;color:var(--text)">
+            <option value="">All Status</option>
+            <option value="Issued">Issued</option>
+            <option value="Returned">Returned</option>
+            <option value="Overdue">Overdue</option>
+          </select>
+        </div>
+        <table><thead><tr><th>ID</th><th>Member</th><th>Book</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th><th>Fine (₹)</th></tr></thead>
+        <tbody id="issue-tbody"><tr class="loading-row"><td colspan="8">Loading records…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="section-header">
+        <div><h2>Reports & Analytics</h2><p>Library insights at a glance</p></div>
+        <button class="btn btn-add" onclick="exportReport()">⬇ Export Report</button>
+      </div>
+      <div class="two-col" style="margin-bottom:22px">
+        <div class="card"><div class="card-header">Most Borrowed Books</div><div id="most-borrowed"><div class="empty-state"><p>Loading…</p></div></div></div>
+        <div class="card"><div class="card-header">Fine Collection</div><div id="fine-report"><div class="empty-state"><p>Loading…</p></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="padding:18px 22px 14px">Member Report</div>
+        <table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Course</th><th>Books Issued</th></tr></thead>
+        <tbody id="member-report-tbody"><tr class="loading-row"><td colspan="6">Loading…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ADMINS -->
+    <div class="page" id="page-admins">
+      <div class="section-header">
+        <div><h2>Admin Users</h2><p>Manage system access and roles</p></div>
+        <button class="btn btn-add" onclick="openModal('admin-modal')">＋ Add Admin</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>ID</th><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+        <tbody id="admins-tbody"><tr class="loading-row"><td colspan="8">Loading admins…</td></tr></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- ═══ MODALS ═══ -->
+<!-- Add Book -->
+<div class="modal-overlay" id="book-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add New Book</h3><button class="modal-close" onclick="closeModal('book-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Title *</label><input id="b-title" placeholder="Book title"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Author *</label><input id="b-author" placeholder="Author name"></div>
+        <div class="form-group"><label>Category *</label><input id="b-category" placeholder="e.g. Science"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ISBN</label><input id="b-isbn" placeholder="ISBN number"></div>
+        <div class="form-group"><label>Publisher</label><input id="b-publisher" placeholder="Publisher"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Total Qty</label><input id="b-qty" type="number" min="1" value="1"></div>
+        <div class="form-group"><label>Available Qty</label><input id="b-avail" type="number" min="0" value="1"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('book-modal')">Cancel</button>
+      <button class="btn btn-add" onclick="addBook()">Add Book</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Book -->
+<div class="modal-overlay" id="edit-book-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit Book</h3><button class="modal-close" onclick="closeModal('edit-book-modal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="eb-id">
+      <div class="form-group"><label>Title</label><input id="eb-title"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Author</label><input id="eb-author"></div>
+        <div class="form-group"><label>Category</label><input id="eb-category"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>ISBN</label><input id="eb-isbn"></div>
+        <div class="form-group"><label>Publisher</label><input id="eb-publisher"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Total Qty</label><input id="eb-qty" type="number" min="1"></div>
+        <div class="form-group"><label>Available Qty</label><input id="eb-avail" type="number" min="0"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('edit-book-modal')">Cancel</button>
+      <button class="btn btn-add" onclick="saveEditBook()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Member -->
+<div class="modal-overlay" id="member-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add New Member</h3><button class="modal-close" onclick="closeModal('member-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Full Name *</label><input id="m-name" placeholder="Member's full name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Email *</label><input id="m-email" type="email" placeholder="email@example.com"></div>
+        <div class="form-group"><label>Phone</label><input id="m-phone" type="tel" placeholder="10-digit number"></div>
+      </div>
+      <div class="form-group"><label>Course / Department</label><input id="m-course" placeholder="e.g. B.Tech CSE"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('member-modal')">Cancel</button>
+      <button class="btn btn-add" onclick="addMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Member -->
+<div class="modal-overlay" id="edit-member-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Edit Member</h3><button class="modal-close" onclick="closeModal('edit-member-modal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="em-id">
+      <div class="form-group"><label>Full Name</label><input id="em-name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Email</label><input id="em-email" type="email"></div>
+        <div class="form-group"><label>Phone</label><input id="em-phone" type="tel"></div>
+      </div>
+      <div class="form-group"><label>Course / Department</label><input id="em-course"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('edit-member-modal')">Cancel</button>
+      <button class="btn btn-add" onclick="saveEditMember()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Issue Book -->
+<div class="modal-overlay" id="issue-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Issue a Book</h3><button class="modal-close" onclick="closeModal('issue-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Select Book</label><select id="i-book"><option value="">Loading books…</option></select></div>
+      <div class="form-group"><label>Select Member</label><select id="i-member"><option value="">Loading members…</option></select></div>
+      <div class="form-group"><label>Issue Date</label><input id="i-date" type="date"></div>
+      <div style="background:#eaf2ff;border:1px solid #c7d7fc;border-radius:6px;padding:11px 14px;font-size:13px;margin-top:4px">
+        📅 Due date will be automatically set to <strong>14 days</strong> from issue date.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('issue-modal')">Cancel</button>
+      <button class="btn btn-add" onclick="issueBook()">Issue Book</button>
+    </div>
+  </div>
+</div>
+
+<!-- Return Book -->
+<div class="modal-overlay" id="return-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Return a Book</h3><button class="modal-close" onclick="closeModal('return-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Select Issue Record</label><select id="r-record"><option value="">Loading…</option></select></div>
+      <div class="form-group"><label>Return Date</label><input id="r-date" type="date"></div>
+      <div style="background:#fef9e7;border:1px solid #f0d080;border-radius:6px;padding:11px 14px;font-size:13px;margin-top:4px">
+        💰 Fine is calculated at <strong>₹5 per day</strong> after the due date.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('return-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="returnBook()">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Admin -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal">
+    <div class="modal-header"><h3>Add Admin User</h3><button class="modal-close" onclick="closeModal('admin-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Username *</label><input id="a-username" placeholder="login username"></div>
+        <div class="form-group"><label>Password *</label><input id="a-password" type="password" placeholder="password"></div>
+      </div>
+      <div class="form-group"><label>Full Name *</label><input id="a-fullname" placeholder="Full name"></div>
+      <div class="form-group"><label>Email</label><input id="a-email" type="email" placeholder="email@example.com"></div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="a-role">
+          <option value="Librarian">Librarian</option>
+          <option value="Assistant">Assistant</option>
+          <option value="Super Admin">Super Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('admin-modal')">Cancel</button>
+      <button class="btn btn-add" onclick="addAdmin()">Add Admin</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+const API = "http://localhost:5000/api";
+
+let currentUser = null;
+let _books = [], _members = [], _issues = [];
+
+// ══════════════════════════════════════════
+//  API HELPER
+// ══════════════════════════════════════════
+async function api(method, path, body) {
+  try {
+    const res = await fetch(API + path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Request failed");
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
+// ══════════════════════════════════════════
+//  CONNECTION STATUS
+// ══════════════════════════════════════════
+async function checkConnection() {
+  try {
+    await fetch("http://localhost:5000/");
+    document.getElementById("api-dot").className = "api-dot connected";
+    document.getElementById("api-status-text").textContent = "Connected";
+  } catch {
+    document.getElementById("api-dot").className = "api-dot error";
+    document.getElementById("api-status-text").textContent = "Not connected";
+  }
+}
+checkConnection();
+setInterval(checkConnection, 10000);
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+async function doLogin() {
+  const username = val("login-username");
+  const password = val("login-password");
+  const btn = document.getElementById("login-btn");
+  const errEl = document.getElementById("login-error");
+  errEl.style.display = "none";
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  try {
+    const data = await api("POST", "/login", { username, password });
+    currentUser = { username, password, ...data };
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("user-name").textContent = data.full_name;
+    document.getElementById("user-role").textContent = data.role;
+    document.getElementById("user-avatar").textContent = data.full_name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    if (data.role === "Super Admin") {
+      document.getElementById("admin-nav-label").style.display = "block";
+      document.getElementById("nav-admins").style.display = "flex";
+    }
+    showPage("dashboard");
+    toast(`Welcome back, ${data.full_name}! 👋`, "success");
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = "block";
+  } finally {
+    btn.textContent = "Sign In";
+    btn.disabled = false;
+  }
+}
+
+async function doLogout() {
+  if (currentUser) {
+    await api("POST", "/logout", { username: currentUser.username, password: currentUser.password }).catch(()=>{});
+  }
+  currentUser = null;
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("login-username").value = "";
+  document.getElementById("login-password").value = "";
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  const navMap = { dashboard:0, books:1, members:2, issue:3, reports:4, admins:5 };
+  const navItems = document.querySelectorAll(".nav-item");
+  if (navItems[navMap[name]]) navItems[navMap[name]].classList.add("active");
+  const titles = { dashboard:"Dashboard", books:"Book Catalog", members:"Members", issue:"Issue / Return", reports:"Reports", admins:"Admin Users" };
+  document.getElementById("page-title").textContent = titles[name] || name;
+  if (name === "dashboard") loadDashboard();
+  if (name === "books")     loadBooks();
+  if (name === "members")   loadMembers();
+  if (name === "issue")     loadIssues();
+  if (name === "reports")   loadReports();
+  if (name === "admins")    loadAdmins();
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const d = await api("GET", "/dashboard");
+    document.getElementById("s-total").textContent   = d.total_books;
+    document.getElementById("s-avail").textContent   = d.available_books;
+    document.getElementById("s-issued").textContent  = d.issued_books;
+    document.getElementById("s-members").textContent = d.total_members;
+    document.getElementById("s-overdue").textContent = d.overdue_books;
+    document.getElementById("s-fines").textContent   = d.total_fines;
+
+    document.getElementById("activity-list").innerHTML = d.activity.length
+      ? d.activity.map(a => `
+        <div class="activity-item">
+          <div class="activity-dot ${a.status==='Returned'?'green':a.status==='Overdue'?'gold':''}"></div>
+          <div class="activity-text"><strong>${a.name}</strong> — <em>${a.title}</em></div>
+          <div class="activity-time">${fmtDate(a.issue_date)}</div>
+        </div>`).join("")
+      : '<div class="empty-state"><p>No recent activity</p></div>';
+
+    document.getElementById("overdue-list").innerHTML = d.overdues.length
+      ? d.overdues.map(o => `
+        <div class="activity-item">
+          <div class="activity-dot gold"></div>
+          <div class="activity-text"><strong>${o.name}</strong><br><span style="color:var(--sub);font-size:12px">${o.title}</span></div>
+          <div class="activity-time">${fmtDate(o.due_date)}</div>
+        </div>`).join("")
+      : '<div class="empty-state"><div class="empty-icon">🎉</div><p>No overdue books!</p></div>';
+  } catch (err) {
+    toast("Dashboard error: " + err.message, "error");
+  }
+}
+
+// ══════════════════════════════════════════
+//  BOOKS
+// ══════════════════════════════════════════
+async function loadBooks() {
+  try {
+    _books = await api("GET", "/books");
+    const tbody = document.getElementById("books-tbody");
+    tbody.innerHTML = _books.map(b => `
+      <tr data-search="${(b.title+b.author+b.category).toLowerCase()}">
+        <td><span style="font-family:'JetBrains Mono',monospace;color:var(--sub)">#${b.book_id}</span></td>
+        <td><strong>${b.title}</strong></td>
+        <td>${b.author}</td>
+        <td><span class="badge badge-blue">${b.category}</span></td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${b.isbn||'—'}</td>
+        <td style="font-size:12px">${b.publisher||'—'}</td>
+        <td>${b.quantity}</td>
+        <td><span class="badge ${b.available_quantity>0?'badge-green':'badge-red'}">${b.available_quantity}</span></td>
+        <td>
+          <button class="btn btn-edit btn-sm" onclick="openEditBook(${b.book_id})">✏ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBook(${b.book_id})" style="margin-left:6px">🗑</button>
+        </td>
+      </tr>`).join("") || '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📚</div><p>No books yet.</p></div></td></tr>';
+  } catch (err) {
+    toast("Error loading books: " + err.message, "error");
+  }
+}
+
+async function addBook() {
+  const payload = { title:val("b-title"), author:val("b-author"), category:val("b-category"), isbn:val("b-isbn"), publisher:val("b-publisher"), quantity:parseInt(val("b-qty"))||1, available_quantity:parseInt(val("b-avail"))||1 };
+  if (!payload.title || !payload.author || !payload.category) { toast("Title, author and category are required.", "error"); return; }
+  try {
+    await api("POST", "/books", payload);
+    closeModal("book-modal");
+    clearFields(["b-title","b-author","b-category","b-isbn","b-publisher"]);
+    document.getElementById("b-qty").value = 1;
+    document.getElementById("b-avail").value = 1;
+    await loadBooks();
+    toast("Book added! 📚", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+function openEditBook(id) {
+  const b = _books.find(x => String(x.book_id) === String(id));
+  if (!b) return;
+  document.getElementById("eb-id").value = b.book_id;
+  document.getElementById("eb-title").value = b.title;
+  document.getElementById("eb-author").value = b.author;
+  document.getElementById("eb-category").value = b.category;
+  document.getElementById("eb-isbn").value = b.isbn || "";
+  document.getElementById("eb-publisher").value = b.publisher || "";
+  document.getElementById("eb-qty").value = b.quantity;
+  document.getElementById("eb-avail").value = b.available_quantity;
+  openModal("edit-book-modal");
+}
+
+async function saveEditBook() {
+  const id = document.getElementById("eb-id").value;
+  const payload = { title:val("eb-title"), author:val("eb-author"), category:val("eb-category"), isbn:val("eb-isbn"), publisher:val("eb-publisher"), quantity:parseInt(val("eb-qty")), available_quantity:parseInt(val("eb-avail")) };
+  try {
+    await api("PUT", `/books/${id}`, payload);
+    closeModal("edit-book-modal");
+    await loadBooks();
+    toast("Book updated.", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+async function deleteBook(id) {
+  if (!confirm("Delete this book permanently?")) return;
+  try {
+    await api("DELETE", `/books/${id}`);
+    await loadBooks();
+    toast("Book removed.", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+// ══════════════════════════════════════════
+//  MEMBERS
+// ══════════════════════════════════════════
+async function loadMembers() {
+  try {
+    _members = await api("GET", "/members");
+    const tbody = document.getElementById("members-tbody");
+    tbody.innerHTML = _members.map(m => `
+      <tr data-search="${(m.name+m.email+m.course).toLowerCase()}">
+        <td><span style="font-family:'JetBrains Mono',monospace;color:var(--sub)">#${m.member_id}</span></td>
+        <td><strong>${m.name}</strong></td>
+        <td style="color:var(--sub)">${m.email}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${m.phone}</td>
+        <td>${m.course}</td>
+        <td style="font-size:12px;color:var(--sub)">${fmtDate(m.join_date)}</td>
+        <td>
+          <button class="btn btn-edit btn-sm" onclick="openEditMember(${m.member_id})">✏ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMember(${m.member_id})" style="margin-left:6px">🗑</button>
+        </td>
+      </tr>`).join("") || '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👤</div><p>No members yet.</p></div></td></tr>';
+  } catch (err) { toast("Error loading members: " + err.message, "error"); }
+}
+
+async function addMember() {
+  const payload = { name:val("m-name"), email:val("m-email"), phone:val("m-phone"), course:val("m-course") };
+  if (!payload.name || !payload.email) { toast("Name and email are required.", "error"); return; }
+  try {
+    await api("POST", "/members", payload);
+    closeModal("member-modal");
+    clearFields(["m-name","m-email","m-phone","m-course"]);
+    await loadMembers();
+    toast("Member added! 👤", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+function openEditMember(id) {
+  const m = _members.find(x => String(x.member_id) === String(id));
+  if (!m) return;
+  document.getElementById("em-id").value = m.member_id;
+  document.getElementById("em-name").value = m.name;
+  document.getElementById("em-email").value = m.email;
+  document.getElementById("em-phone").value = m.phone;
+  document.getElementById("em-course").value = m.course;
+  openModal("edit-member-modal");
+}
+
+async function saveEditMember() {
+  const id = document.getElementById("em-id").value;
+  const payload = { name:val("em-name"), email:val("em-email"), phone:val("em-phone"), course:val("em-course") };
+  try {
+    await api("PUT", `/members/${id}`, payload);
+    closeModal("edit-member-modal");
+    await loadMembers();
+    toast("Member updated.", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+async function deleteMember(id) {
+  if (!confirm("Remove this member?")) return;
+  try {
+    await api("DELETE", `/members/${id}`);
+    await loadMembers();
+    toast("Member removed.", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+// ══════════════════════════════════════════
+//  ISSUE / RETURN
+// ══════════════════════════════════════════
+async function loadIssues() {
+  try {
+    _issues = await api("GET", "/issues");
+    renderIssues(_issues);
+  } catch (err) { toast("Error loading records: " + err.message, "error"); }
+}
+
+function renderIssues(records) {
+  const tbody = document.getElementById("issue-tbody");
+  const badgeClass = { Issued:"badge-blue", Returned:"badge-green", Overdue:"badge-red" };
+  tbody.innerHTML = records.map(r => `
+    <tr data-search="${(r.member_name+r.book_title+r.status).toLowerCase()}" data-status="${r.status}">
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--sub)">#${r.issue_id}</td>
+      <td>${r.member_name}</td>
+      <td>${r.book_title}</td>
+      <td style="font-size:12px">${fmtDate(r.issue_date)}</td>
+      <td style="font-size:12px">${fmtDate(r.due_date)}</td>
+      <td style="font-size:12px">${r.return_date && r.return_date!=='None' ? fmtDate(r.return_date) : '—'}</td>
+      <td><span class="badge ${badgeClass[r.status]||'badge-gray'}">${r.status}</span></td>
+      <td style="${r.fine>0?'color:var(--accent);font-weight:600':'color:var(--sub)'}">₹${r.fine||0}</td>
+    </tr>`).join("") || '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📤</div><p>No issue records.</p></div></td></tr>';
+}
+
+async function openIssueModal() {
+  // Populate books dropdown (available only)
+  if (!_books.length) _books = await api("GET", "/books").catch(()=>[]);
+  if (!_members.length) _members = await api("GET", "/members").catch(()=>[]);
+  const availBooks = _books.filter(b => parseInt(b.available_quantity) > 0);
+  document.getElementById("i-book").innerHTML =
+    '<option value="">— Choose a book —</option>' +
+    availBooks.map(b => `<option value="${b.book_id}">${b.title} (${b.available_quantity} available)</option>`).join("");
+  document.getElementById("i-member").innerHTML =
+    '<option value="">— Choose a member —</option>' +
+    _members.map(m => `<option value="${m.member_id}">${m.name}</option>`).join("");
+  document.getElementById("i-date").value = today();
+  openModal("issue-modal");
+}
+
+async function openReturnModal() {
+  if (!_issues.length) _issues = await api("GET", "/issues").catch(()=>[]);
+  const active = _issues.filter(r => r.status === "Issued" || r.status === "Overdue");
+  document.getElementById("r-record").innerHTML =
+    '<option value="">— Choose a record —</option>' +
+    active.map(r => `<option value="${r.issue_id}">#${r.issue_id} — ${r.member_name} / ${r.book_title}</option>`).join("");
+  document.getElementById("r-date").value = today();
+  openModal("return-modal");
+}
+
+async function issueBook() {
+  const book_id   = document.getElementById("i-book").value;
+  const member_id = document.getElementById("i-member").value;
+  const issue_date = document.getElementById("i-date").value;
+  if (!book_id || !member_id || !issue_date) { toast("Please fill all fields.", "error"); return; }
+  try {
+    await api("POST", "/issues", { book_id: parseInt(book_id), member_id: parseInt(member_id), issue_date });
+    closeModal("issue-modal");
+    _books = []; _issues = [];
+    await loadIssues();
+    toast("Book issued successfully! 📤", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+async function returnBook() {
+  const issue_id  = document.getElementById("r-record").value;
+  const return_date = document.getElementById("r-date").value;
+  if (!issue_id || !return_date) { toast("Please fill all fields.", "error"); return; }
+  try {
+    const result = await api("POST", `/issues/${issue_id}/return`, { return_date });
+    closeModal("return-modal");
+    _books = []; _issues = [];
+    await loadIssues();
+    const msg = result.fine > 0 ? `Book returned. Fine: ₹${result.fine} 💰` : "Book returned successfully! 📥";
+    toast(msg, "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+function filterByStatus(status) {
+  document.querySelectorAll("#issue-tbody tr").forEach(row => {
+    row.style.display = (!status || row.dataset.status === status) ? "" : "none";
+  });
+}
+
+// ══════════════════════════════════════════
+//  REPORTS
+// ══════════════════════════════════════════
+async function loadReports() {
+  try {
+    const [borrowed, fines, members] = await Promise.all([
+      api("GET", "/reports/most-borrowed"),
+      api("GET", "/reports/fines"),
+      api("GET", "/reports/member-summary"),
+    ]);
+
+    document.getElementById("most-borrowed").innerHTML = borrowed.length
+      ? borrowed.map((b, i) => `
+        <div class="activity-item">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--sub);width:24px">${i+1}.</div>
+          <div class="activity-text">${b.title}</div>
+          <div class="activity-time">${b.times_borrowed}× issued</div>
+        </div>`).join("")
+      : '<div class="empty-state"><p>No data yet.</p></div>';
+
+    const totalFine = fines.reduce((s, r) => s + parseFloat(r.fine||0), 0);
+    document.getElementById("fine-report").innerHTML = fines.length
+      ? fines.map(r => `
+        <div class="activity-item">
+          <div class="activity-dot gold"></div>
+          <div class="activity-text">${r.name}</div>
+          <div class="activity-time" style="color:var(--accent);font-weight:600">₹${r.fine}</div>
+        </div>`).join("") + `<div style="padding:14px 22px;border-top:1px solid var(--mist);font-size:13px;color:var(--sub)">Total: <strong style="color:var(--text)">₹${totalFine}</strong></div>`
+      : '<div class="empty-state"><p>No fines collected.</p></div>';
+
+    document.getElementById("member-report-tbody").innerHTML = members.map(m => `
+      <tr>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--sub)">#${m.member_id}</td>
+        <td><strong>${m.name}</strong></td>
+        <td style="color:var(--sub)">${m.email}</td>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${m.phone}</td>
+        <td>${m.course}</td>
+        <td><span class="badge ${m.books_issued>0?'badge-blue':'badge-gray'}">${m.books_issued}</span></td>
+      </tr>`).join("") || '<tr><td colspan="6" class="empty-state">No members.</td></tr>';
+  } catch (err) { toast("Error loading reports: " + err.message, "error"); }
+}
+
+async function exportReport() {
+  try {
+    const [books, members, issues] = await Promise.all([
+      api("GET", "/books"),
+      api("GET", "/members"),
+      api("GET", "/issues"),
+    ]);
+    const lines = [
+      "LIBRARY MANAGEMENT SYSTEM — REPORT",
+      "=".repeat(50),
+      `Generated: ${new Date().toLocaleString("en-IN")}`,
+      "",
+      "BOOKS",
+      "-".repeat(50),
+      ...books.map(b => `[${b.book_id}] ${b.title} — ${b.author} | Avail: ${b.available_quantity}/${b.quantity}`),
+      "",
+      "MEMBERS",
+      "-".repeat(50),
+      ...members.map(m => `[${m.member_id}] ${m.name} | ${m.email} | ${m.course}`),
+      "",
+      "ISSUE RECORDS",
+      "-".repeat(50),
+      ...issues.map(r => `[${r.issue_id}] ${r.member_name} → ${r.book_title} | ${r.status} | Fine: ₹${r.fine||0}`),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `library_report_${today()}.txt`;
+    a.click();
+    toast("Report exported! ⬇", "success");
+  } catch (err) { toast("Export failed: " + err.message, "error"); }
+}
+
+// ══════════════════════════════════════════
+//  ADMINS
+// ══════════════════════════════════════════
+async function loadAdmins() {
+  try {
+    const admins = await api("GET", "/admins");
+    document.getElementById("admins-tbody").innerHTML = admins.map(a => `
+      <tr>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--sub)">#${a.admin_id}</td>
+        <td><strong>${a.username}</strong></td>
+        <td>${a.full_name}</td>
+        <td style="color:var(--sub)">${a.email}</td>
+        <td>${a.role}</td>
+        <td><span class="badge ${a.status==='Active'?'badge-green':'badge-gray'}">${a.status}</span></td>
+        <td style="font-size:12px;color:var(--sub)">${a.last_login && a.last_login!=='None' ? fmtDate(a.last_login) : '—'}</td>
+        <td>${a.username !== currentUser?.username
+          ? `<button class="btn btn-danger btn-sm" onclick="deleteAdmin(${a.admin_id})">🗑</button>`
+          : '<span style="font-size:12px;color:var(--sub)">you</span>'}</td>
+      </tr>`).join("") || '<tr><td colspan="8">No admins found.</td></tr>';
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+async function addAdmin() {
+  const payload = { username:val("a-username"), password:val("a-password"), full_name:val("a-fullname"), email:val("a-email"), role:val("a-role") };
+  if (!payload.username || !payload.password || !payload.full_name) { toast("Fill all required fields.", "error"); return; }
+  try {
+    await api("POST", "/admins", payload);
+    closeModal("admin-modal");
+    clearFields(["a-username","a-password","a-fullname","a-email"]);
+    await loadAdmins();
+    toast("Admin user created! 🔐", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+async function deleteAdmin(id) {
+  if (!confirm("Delete this admin user?")) return;
+  try {
+    await api("DELETE", `/admins/${id}`);
+    await loadAdmins();
+    toast("Admin removed.", "success");
+  } catch (err) { toast("Error: " + err.message, "error"); }
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function val(id) { return (document.getElementById(id)?.value || "").trim(); }
+function clearFields(ids) { ids.forEach(id => document.getElementById(id) && (document.getElementById(id).value = "")); }
+function today() { return new Date().toISOString().split("T")[0]; }
+function fmtDate(d) {
+  if (!d || d === "None") return "—";
+  const dt = new Date(d);
+  return isNaN(dt) ? d : dt.toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+}
+
+function filterRows(tbodyId, query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll(`#${tbodyId} tr`).forEach(row => {
+    row.style.display = (!q || (row.dataset.search||"").includes(q)) ? "" : "none";
+  });
+}
+
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".modal-overlay").forEach(o => {
+  o.addEventListener("click", e => { if (e.target === o) o.classList.remove("open"); });
+});
+
+function toast(msg, type="") {
+  const wrap = document.getElementById("toast-wrap");
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .4s"; setTimeout(() => el.remove(), 400); }, 3200);
+}
+
+document.getElementById("topbar-date").textContent = new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
+document.getElementById("login-password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("login-username").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("login-password").focus(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll(".modal-overlay.open").forEach(o => o.classList.remove("open")); });
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+📚 Library Management System
+
+A comprehensive console-based Library Management System developed using Python and MySQL to automate and simplify daily library operations. The system provides dedicated modules for managing books, members, administrators, issue and return records, reports, and data exports through an interactive menu-driven interface.
+
+The application supports role-based access control with multiple user roles, including Super Admin, Librarian, and Assistant, ensuring secure and organized management of library resources. Users can add, search, update, and delete records, track book availability, issue and return books, manage due dates, and calculate fines for overdue returns.
+
+The project also includes analytical reporting features such as library dashboards, issued books reports, overdue books reports, member reports, fine collection reports, and most borrowed books statistics. Additionally, data can be exported to text files for documentation and record-keeping purposes.
+
+Built using modular programming principles, the project is divided into multiple Python modules, making the code more organized, maintainable, and scalable. This project demonstrates practical implementation of Python programming, MySQL database management, CRUD operations, SQL joins, authentication systems, role-based permissions, file handling, and report generation.
+
+🔹 Key Features
+1. Admin Authentication & Role-Based Access Control
+2. Book Management System
+3. Member Management System
+4. Issue & Return Management
+5. Due Date & Fine Calculation
+6. Library Reports & Analytics
+7. Data Export Functionality
+8. MySQL Database Integration
+9. Modular Code Structure
+🛠 Technologies Used
+1. Python
+2. MySQL
+3. MySQL Connector
+4. SQL Queries & Joins
+5. File Handling
+
+This project was developed as a learning-focused application to strengthen database management and software development skills while simulating the workflow of a real-world library management system.
